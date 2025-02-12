@@ -22,13 +22,25 @@ export async function scanUrlForNewsletterForm(url: string): Promise<string | nu
     for (let i = 0; i < forms.length; i++) {
       const form = forms.eq(i);
 
-      // Look for email input with various attributes
+      // Look for email input
       const hasEmailInput = 
         form.find('input[type="email"]').length > 0 ||
         form.find('input[name*="email" i]').length > 0 ||
         form.find('input[placeholder*="email" i]').length > 0 ||
         form.find('input#email').length > 0 ||
         form.find('input.email').length > 0;
+
+      // Check for unwanted elements (name fields, checkboxes, radio buttons)
+      const hasNameField = 
+        form.find('input[name*="name" i]').length > 0 ||
+        form.find('input[placeholder*="name" i]').length > 0 ||
+        form.find('input#name').length > 0 ||
+        form.find('input#firstName').length > 0 ||
+        form.find('input#lastName').length > 0 ||
+        form.find('input.name').length > 0;
+
+      const hasCheckbox = form.find('input[type="checkbox"]').length > 0;
+      const hasRadio = form.find('input[type="radio"]').length > 0;
 
       // Look for submit button
       const hasSubmitButton = 
@@ -38,7 +50,8 @@ export async function scanUrlForNewsletterForm(url: string): Promise<string | nu
         form.find('button:contains("Sign up")').length > 0 ||
         form.find('input[value*="Subscribe" i]').length > 0;
 
-      if (hasEmailInput && hasSubmitButton) {
+      // Only return forms that have email + submit button but no name fields, checkboxes, or radio buttons
+      if (hasEmailInput && hasSubmitButton && !hasNameField && !hasCheckbox && !hasRadio) {
         const formAction = form.attr('action');
         return formAction || url;
       }
