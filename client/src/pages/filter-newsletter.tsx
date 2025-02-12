@@ -27,12 +27,6 @@ export default function FilterNewsletter() {
       const foundUrls: string[] = [];
       let processed = 0;
 
-      toast({
-        id: "progress",
-        title: "Scanning URLs",
-        description: `Processed: 0/${urls.length}`,
-      });
-
       for (const url of urls) {
         try {
           const response = await apiRequest("POST", "/api/urls", {
@@ -46,11 +40,13 @@ export default function FilterNewsletter() {
           }
 
           processed++;
-          toast({
-            id: "progress",
-            title: "Scanning URLs",
-            description: `Processed: ${processed}/${urls.length}`,
-          });
+          // Show progress without using toast IDs
+          if (processed % 5 === 0 || processed === urls.length) {
+            toast({
+              title: "Scanning URLs",
+              description: `Processed: ${processed}/${urls.length}`,
+            });
+          }
         } catch (error) {
           console.error(`Error processing ${url}:`, error);
         }

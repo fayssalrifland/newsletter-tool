@@ -1,61 +1,41 @@
-import puppeteer from "puppeteer";
+import * as cheerio from 'cheerio';
 
 export async function scanUrlForNewsletterForm(url: string): Promise<string | null> {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--no-first-run',
-      '--no-zygote',
-      '--single-process'
-    ]
-  });
-
   try {
-    const page = await browser.newPage();
-    await page.setDefaultNavigationTimeout(15000);
-
-    // Try to navigate to the URL
-    try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-    } catch (error) {
-      console.error(`Navigation error for ${url}:`, error);
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`Failed to fetch ${url}: ${response.statusText}`);
       return null;
     }
 
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
     // Look for forms with email inputs
-    const hasNewsletterForm = await page.evaluate(() => {
-      const forms = Array.from(document.getElementsByTagName('form'));
+    const forms = $('form');
+    for (let i = 0; i < forms.length; i++) {
+      const form = forms.eq(i);
 
-      for (const form of forms) {
-        // Look for email input
-        const emailInput = form.querySelector('input[type="email"]') || 
-                         form.querySelector('input[placeholder*="email" i]') ||
-                         form.querySelector('input[name*="email" i]');
+      // Look for email input
+      const hasEmailInput = form.find('input[type="email"]').length > 0 ||
+                          form.find('input[placeholder*="email" i]').length > 0 ||
+                          form.find('input[name*="email" i]').length > 0;
 
-        // Look for submit button
-        const submitButton = form.querySelector('input[type="submit"]') ||
-                          form.querySelector('button[type="submit"]') ||
-                          form.querySelector('button:not([type])');
+      // Look for submit button
+      const hasSubmitButton = form.find('input[type="submit"]').length > 0 ||
+                             form.find('button[type="submit"]').length > 0 ||
+                             form.find('button:not([type])').length > 0;
 
-        if (emailInput && submitButton) {
-          // Get the form's action URL or default to the page URL
-          const formUrl = form.getAttribute('action') || window.location.href;
-          return formUrl;
-        }
+      if (hasEmailInput && hasSubmitButton) {
+        // Get the form's action URL or default to the page URL
+        const formAction = form.attr('action');
+        return formAction || url;
       }
+    }
 
-      return null;
-    });
-
-    return hasNewsletterForm;
+    return null;
   } catch (error) {
     console.error(`Error scanning ${url}:`, error);
     return null;
-  } finally {
-    await browser.close();
   }
 }
