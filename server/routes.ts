@@ -18,20 +18,16 @@ export function registerRoutes(app: Express): Server {
     }
 
     const sourceUrl = parsed.data.sourceUrl;
-    const formInfo = await scanUrlForNewsletterForm(sourceUrl);
+    const formUrl = await scanUrlForNewsletterForm(sourceUrl);
 
-    if (!formInfo) {
+    if (!formUrl) {
       res.json({ found: false });
       return;
     }
 
     const url = await storage.addUrl({ 
       sourceUrl: sourceUrl,
-      formUrl: formInfo.formUrl,
-      hasFirstName: formInfo.hasFirstName ? 'true' : 'false',
-      hasLastName: formInfo.hasLastName ? 'true' : 'false',
-      hasCheckbox: formInfo.hasCheckbox ? 'true' : 'false',
-      hasRadio: formInfo.hasRadio ? 'true' : 'false'
+      formUrl: formUrl
     });
 
     res.json({ found: true, url });

@@ -20,14 +20,7 @@ export class MemStorage implements IStorage {
 
   async addUrl(insertUrl: InsertUrl): Promise<Url> {
     const id = this.currentId++;
-    const url: Url = { 
-      ...insertUrl, 
-      id,
-      hasFirstName: insertUrl.hasFirstName || 'false',
-      hasLastName: insertUrl.hasLastName || 'false',
-      hasCheckbox: insertUrl.hasCheckbox || 'false',
-      hasRadio: insertUrl.hasRadio || 'false'
-    };
+    const url: Url = { ...insertUrl, id };
     this.urls.set(id, url);
     return url;
   }

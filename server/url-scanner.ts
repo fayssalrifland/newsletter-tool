@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 
-export async function scanUrlForNewsletterForm(url: string): Promise<{ formUrl: string | null; hasFirstName: boolean; hasLastName: boolean; hasCheckbox: boolean; hasRadio: boolean } | null> {
+export async function scanUrlForNewsletterForm(url: string): Promise<string | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -16,17 +16,11 @@ export async function scanUrlForNewsletterForm(url: string): Promise<{ formUrl: 
     const html = await response.text();
     const $ = cheerio.load(html);
 
-    // Look for newsletter-specific forms and inputs
+    // Look for forms with email inputs
     const forms = $('form');
 
     for (let i = 0; i < forms.length; i++) {
       const form = forms.eq(i);
-
-      // Check for common newsletter form indicators
-      const hasNewsletterContext = form.text().toLowerCase().includes('newsletter') ||
-                                form.text().toLowerCase().includes('subscribe') ||
-                                form.closest('div').text().toLowerCase().includes('newsletter') ||
-                                form.closest('div').text().toLowerCase().includes('subscribe');
 
       // Look for email input with various attributes
       const hasEmailInput = 
@@ -36,23 +30,7 @@ export async function scanUrlForNewsletterForm(url: string): Promise<{ formUrl: 
         form.find('input#email').length > 0 ||
         form.find('input.email').length > 0;
 
-      // Look for name inputs
-      const hasFirstName = 
-        form.find('input[name*="first" i]').length > 0 ||
-        form.find('input[placeholder*="first" i]').length > 0 ||
-        form.find('input#firstName').length > 0 ||
-        form.find('input[name="name"]').length > 0;
-
-      const hasLastName = 
-        form.find('input[name*="last" i]').length > 0 ||
-        form.find('input[placeholder*="last" i]').length > 0 ||
-        form.find('input#lastName').length > 0;
-
-      // Look for checkboxes and radio buttons
-      const hasCheckbox = form.find('input[type="checkbox"]').length > 0;
-      const hasRadio = form.find('input[type="radio"]').length > 0;
-
-      // Look for submit button with newsletter-related text
+      // Look for submit button
       const hasSubmitButton = 
         form.find('button[type="submit"]').length > 0 ||
         form.find('input[type="submit"]').length > 0 ||
@@ -60,18 +38,9 @@ export async function scanUrlForNewsletterForm(url: string): Promise<{ formUrl: 
         form.find('button:contains("Sign up")').length > 0 ||
         form.find('input[value*="Subscribe" i]').length > 0;
 
-      // Additional check for single input form with submit button
-      const isSingleInputForm = form.find('input').length === 1 && hasEmailInput && hasSubmitButton;
-
-      if ((hasEmailInput && hasSubmitButton && (hasNewsletterContext || isSingleInputForm))) {
+      if (hasEmailInput && hasSubmitButton) {
         const formAction = form.attr('action');
-        return {
-          formUrl: formAction || url,
-          hasFirstName,
-          hasLastName,
-          hasCheckbox,
-          hasRadio
-        };
+        return formAction || url;
       }
     }
 
