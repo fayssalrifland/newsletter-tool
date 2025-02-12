@@ -27,8 +27,8 @@ export default function FilterNewsletter() {
       const foundUrls: string[] = [];
       let processed = 0;
 
-      // Update progress toast
-      const progressToast = toast({
+      toast({
+        id: "progress",
         title: "Scanning URLs",
         description: `Processed: 0/${urls.length}`,
       });
@@ -46,7 +46,9 @@ export default function FilterNewsletter() {
           }
 
           processed++;
-          progressToast.update({
+          toast({
+            id: "progress",
+            title: "Scanning URLs",
             description: `Processed: ${processed}/${urls.length}`,
           });
         } catch (error) {
