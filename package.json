@@ -102,5 +102,7 @@
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
   },
-  {"homepage": "https://fayssalrifland.github.io/newsletter-tool"}
+  "homepage": {
+  "https://fayssalrifland.github.io/newsletter-tool"
+}
 }
