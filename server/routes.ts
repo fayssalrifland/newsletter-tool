@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUrlSchema } from "@shared/schema";
+import { scanUrlForNewsletterForm } from "./url-scanner";
 
 export function registerRoutes(app: Express): Server {
   app.get("/api/urls", async (_req, res) => {
@@ -15,9 +16,21 @@ export function registerRoutes(app: Express): Server {
       res.status(400).json({ error: "Invalid URL data" });
       return;
     }
-    
-    const url = await storage.addUrl(parsed.data);
-    res.json(url);
+
+    const sourceUrl = parsed.data.sourceUrl;
+    const formUrl = await scanUrlForNewsletterForm(sourceUrl);
+
+    if (!formUrl) {
+      res.json({ found: false });
+      return;
+    }
+
+    const url = await storage.addUrl({ 
+      sourceUrl: sourceUrl,
+      formUrl: formUrl
+    });
+
+    res.json({ found: true, url });
   });
 
   const httpServer = createServer(app);

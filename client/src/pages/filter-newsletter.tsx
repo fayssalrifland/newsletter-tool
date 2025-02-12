@@ -14,7 +14,7 @@ export default function FilterNewsletter() {
     try {
       setIsLoading(true);
       const urls = inputUrls.split("\n").filter(url => url.trim());
-      
+
       if (urls.length === 0) {
         toast({
           title: "Error",
@@ -24,29 +24,41 @@ export default function FilterNewsletter() {
         return;
       }
 
-      // Here we would normally scan the URLs, but we'll simulate it
-      const foundUrls = urls.filter(url => {
-        try {
-          new URL(url);
-          return true;
-        } catch {
-          return false;
-        }
+      const foundUrls: string[] = [];
+      let processed = 0;
+
+      // Update progress toast
+      const progressToast = toast({
+        title: "Scanning URLs",
+        description: `Processed: 0/${urls.length}`,
       });
 
-      setOutputUrls(foundUrls.join("\n"));
-      
-      // Store valid URLs
-      for (const url of foundUrls) {
-        await apiRequest("POST", "/api/urls", {
-          sourceUrl: url,
-          formUrl: url,
-        });
+      for (const url of urls) {
+        try {
+          const response = await apiRequest("POST", "/api/urls", {
+            sourceUrl: url,
+            formUrl: url,
+          });
+
+          const result = await response.json();
+          if (result.found) {
+            foundUrls.push(url);
+          }
+
+          processed++;
+          progressToast.update({
+            description: `Processed: ${processed}/${urls.length}`,
+          });
+        } catch (error) {
+          console.error(`Error processing ${url}:`, error);
+        }
       }
+
+      setOutputUrls(foundUrls.join("\n"));
 
       toast({
         title: "Success",
-        description: `Found ${foundUrls.length} newsletter forms`,
+        description: `Found ${foundUrls.length} newsletter forms out of ${urls.length} URLs`,
       });
     } catch (error) {
       toast({
