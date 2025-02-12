@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 
-export async function scanUrlForNewsletterForm(url: string): Promise<string | null> {
+export async function scanUrlForNewsletterForm(url: string): Promise<{ formUrl: string | null; hasFirstName: boolean; hasLastName: boolean; hasCheckbox: boolean; hasRadio: boolean } | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -36,6 +36,22 @@ export async function scanUrlForNewsletterForm(url: string): Promise<string | nu
         form.find('input#email').length > 0 ||
         form.find('input.email').length > 0;
 
+      // Look for name inputs
+      const hasFirstName = 
+        form.find('input[name*="first" i]').length > 0 ||
+        form.find('input[placeholder*="first" i]').length > 0 ||
+        form.find('input#firstName').length > 0 ||
+        form.find('input[name="name"]').length > 0;
+
+      const hasLastName = 
+        form.find('input[name*="last" i]').length > 0 ||
+        form.find('input[placeholder*="last" i]').length > 0 ||
+        form.find('input#lastName').length > 0;
+
+      // Look for checkboxes and radio buttons
+      const hasCheckbox = form.find('input[type="checkbox"]').length > 0;
+      const hasRadio = form.find('input[type="radio"]').length > 0;
+
       // Look for submit button with newsletter-related text
       const hasSubmitButton = 
         form.find('button[type="submit"]').length > 0 ||
@@ -49,7 +65,13 @@ export async function scanUrlForNewsletterForm(url: string): Promise<string | nu
 
       if ((hasEmailInput && hasSubmitButton && (hasNewsletterContext || isSingleInputForm))) {
         const formAction = form.attr('action');
-        return formAction || url;
+        return {
+          formUrl: formAction || url,
+          hasFirstName,
+          hasLastName,
+          hasCheckbox,
+          hasRadio
+        };
       }
     }
 
